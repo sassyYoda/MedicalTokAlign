@@ -4,9 +4,8 @@ export MAIN_DIR="/path/2/TokAlign/"
 cd ${MAIN_DIR}
 export CACHE_DIR="${MAIN_DIR}/data/cache"
 
-# export TRAIN_FILE="${MAIN_DIR}/data/pretrain-corpus/lang-code-math-mix.json"
-# sample corpus for demonstration
-export TRAIN_FILE="${MAIN_DIR}/data/pretrain-corpus/pubmed-corpus.json"
+# Use HuggingFace dataset directly
+export DATASET_NAME="uiyunkim-hub/pubmed-abstract"
 
 # Source Tokenizer
 export MODLE_PATH1="EleutherAI/pythia-1b"
@@ -27,11 +26,10 @@ export MATRIX_EVAL_PATH="${MAIN_DIR}/data/pretrain-dataset/pythia-2-biogpt-glove
 export NUM_WORKERS=48
 
 tokenize () {
-  HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1
   python -u src/process_dataset.py \
     --model_name_or_path ${MODLE_PATH} \
     --tokenizer_name ${TOKENIZER_PATH} \
-    --train_file ${TRAIN_FILE} \
+    --dataset_name ${DATASET_NAME} \
     --only_tokenize \
     --cache_dir ${CACHE_DIR} \
     --dataset_path_in_disk ${DATASET_PATH} \
@@ -44,14 +42,14 @@ MODLE_PATH=$MODLE_PATH1
 TOKENIZER_PATH=$TOKENIZER_PATH1
 DATASET_PATH=$DATASET_PATH1
 
-printf "\n### Tokenize ${TRAIN_FILE} into the token ID corpus ${DATASET_PATH1} with tokenizer ${TOKENIZER_PATH1} ... ###\n\n"
+printf "\n### Tokenize ${DATASET_NAME} into the token ID corpus ${DATASET_PATH1} with tokenizer ${TOKENIZER_PATH1} ... ###\n\n"
 tokenize
 
 MODLE_PATH=$MODLE_PATH2
 TOKENIZER_PATH=$TOKENIZER_PATH2
 DATASET_PATH=$DATASET_PATH2
 
-printf "\n### Tokenize ${TRAIN_FILE} into the token ID corpus ${DATASET_PATH2} with tokenizer ${TOKENIZER_PATH2} ... ###\n\n"
+printf "\n### Tokenize ${DATASET_NAME} into the token ID corpus ${DATASET_PATH2} with tokenizer ${TOKENIZER_PATH2} ... ###\n\n"
 tokenize
 
 MIN_LEN=0

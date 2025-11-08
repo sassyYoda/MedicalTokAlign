@@ -14,7 +14,7 @@ export TGT="biogpt"
 MODEL_NAME="./data/pythia2${TGT}/${MODEL}/glove"
 
 # export DATASET_PATH="./data/pretrain-dataset/pile00-${TGT}-tokenized"
-export DATASET_PATH="./data/pretrain-dataset/pile00-sample-${TGT}-tokenized"
+export DATASET_PATH="./data/pretrain-dataset/pubmed-${TGT}-tokenized"
 
 export CONFIG_FILE="./data/Deepspeed-Configs/zero3.yaml"
 

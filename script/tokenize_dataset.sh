@@ -7,21 +7,19 @@ export CACHE_DIR="${MAIN_DIR}/data/cache"
 export MODLE_PATH="./data/pythia2biogpt/TokAlign-Init-1B"
 export TOKENIZER_PATH="./data/pythia2biogpt/TokAlign-Init-1B"
 
-# export TRAIN_FILE="./data/pretrain-corpus/pile00.json"
-export TRAIN_FILE="./data/pretrain-corpus/pile00.sample.json"
+# Use HuggingFace dataset directly
+export DATASET_NAME="uiyunkim-hub/pubmed-abstract"
 
 # export DATASET_PATH="./data/pretrain-dataset/pile00-biogpt-tokenized"
-export DATASET_PATH="./data/pretrain-dataset/pile00-sample-biogpt-tokenized"
+export DATASET_PATH="./data/pretrain-dataset/pubmed-biogpt-tokenized"
 
 export NUM_WORKERS=60
 export BLOCK_SIZE=2048
 
-HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1
-
 python -u src/process_dataset.py \
   --model_name_or_path ${MODLE_PATH} \
   --tokenizer_name ${TOKENIZER_PATH} \
-  --train_file ${TRAIN_FILE} \
+  --dataset_name ${DATASET_NAME} \
   --cache_dir ${CACHE_DIR} \
   --dataset_path_in_disk ${DATASET_PATH} \
   --preprocessing_num_workers ${NUM_WORKERS} \

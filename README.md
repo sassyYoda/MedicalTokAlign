@@ -25,25 +25,9 @@ pip install -r requirements.txt
 
 ### Prepare PubMed Corpus
 
-1. **Download PubMed abstracts** (~1 billion tokens, ~3.3 million abstracts):
-```bash
-# Install pubget if not already installed
-pip install pubget
+The scripts are configured to use the [PubMed Abstracts dataset from HuggingFace](https://huggingface.co/datasets/uiyunkim-hub/pubmed-abstract) directly (~27.7M abstracts, updated daily). No manual download needed!
 
-# Download and format PubMed abstracts
-python script/download_pubmed_corpus.py
-```
-
-This script will:
-- Download PubMed abstracts using `pubget`
-- Extract only abstracts (filters out full text)
-- Convert to JSONL format: `{"text": "abstract..."}`
-- Count tokens to track progress toward 1B tokens
-- Save to `data/pretrain-corpus/pubmed-corpus.json`
-
-**Note:** The download may take several hours/days depending on your connection. Consider running on a cloud instance (e.g., RunPod) with better connectivity.
-
-2. **Tokenize corpus and prepare files of GloVe vector training and evaluation**:
+**Tokenize corpus and prepare files of GloVe vector training and evaluation**:
 ```bash
 # Update paths in the script (already configured for BioGPT)
 vim script/convert2glove_corpus.sh 
@@ -89,7 +73,7 @@ bash script/vocab_adaptation.sh
 This repository is configured for:
 - **Base Model**: `EleutherAI/pythia-1b`
 - **Target Model/Tokenizer**: `microsoft/biogpt`
-- **Training Corpus**: PubMed abstracts (~1 billion tokens)
+- **Training Corpus**: [PubMed Abstracts from HuggingFace](https://huggingface.co/datasets/uiyunkim-hub/pubmed-abstract) (~27.7M abstracts, ~1 billion tokens)
 
 All scripts have been updated to use BioGPT instead of Gemma/Qwen2/LLaMA3. See individual scripts in `script/` directory for details.
 
