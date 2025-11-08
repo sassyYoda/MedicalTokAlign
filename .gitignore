@@ -1,0 +1,49 @@
+# Large corpus files (should not be in git)
+data/pretrain-corpus/pubmed-corpus.json
+data/pretrain-corpus/pubmed-corpus*.json
+data/pretrain-corpus/*.json
+
+# Pubget download data
+data/pubget_data/
+
+# Tokenized datasets (can be regenerated)
+data/pretrain-dataset/
+
+# Model checkpoints and logs
+log/
+*.log
+
+# Cache directories
+data/cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment
+venv/
+env/
+.venv/
+.conda/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# GloVe vectors (large files)
+data/vec-*.txt
+
+# Alignment matrices (can be regenerated)
+data/pythia2biogpt/align_matrix*.json
+
+# Model outputs
+data/pythia2biogpt/TokAlign-Init-1B/
+

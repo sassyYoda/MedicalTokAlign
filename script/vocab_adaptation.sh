@@ -9,7 +9,7 @@ export MASTER_PORT=16899
 
 export MODEL="1b"
 
-export TGT="gemma"
+export TGT="biogpt"
 
 MODEL_NAME="./data/pythia2${TGT}/${MODEL}/glove"
 

@@ -6,7 +6,7 @@ export CACHE_DIR="${MAIN_DIR}/data/cache"
 
 # export TRAIN_FILE="${MAIN_DIR}/data/pretrain-corpus/lang-code-math-mix.json"
 # sample corpus for demonstration
-export TRAIN_FILE="${MAIN_DIR}/data/pretrain-corpus/lang-code-math-mix.sample.json"
+export TRAIN_FILE="${MAIN_DIR}/data/pretrain-corpus/pubmed-corpus.json"
 
 # Source Tokenizer
 export MODLE_PATH1="EleutherAI/pythia-1b"
@@ -16,13 +16,13 @@ export DATASET_PATH1="${MAIN_DIR}/data/pretrain-dataset/mix-pythia-tok"
 export GLOVE_TRAIN_PATH1="${MAIN_DIR}/data/pretrain-dataset/mix-pythia-glove"
 
 # Target Tokenizer
-export MODLE_PATH2="google/gemma-2b"
-export TOKENIZER_PATH2="google/gemma-2b"
+export MODLE_PATH2="microsoft/biogpt"
+export TOKENIZER_PATH2="microsoft/biogpt"
 
-export DATASET_PATH2="${MAIN_DIR}/data/pretrain-dataset/mix-gemma-tok"
-export GLOVE_TRAIN_PATH2="${MAIN_DIR}/data/pretrain-dataset/mix-gemma-glove"
+export DATASET_PATH2="${MAIN_DIR}/data/pretrain-dataset/mix-biogpt-tok"
+export GLOVE_TRAIN_PATH2="${MAIN_DIR}/data/pretrain-dataset/mix-biogpt-glove"
 
-export MATRIX_EVAL_PATH="${MAIN_DIR}/data/pretrain-dataset/pythia-2-gemma-glove-eval-mix"
+export MATRIX_EVAL_PATH="${MAIN_DIR}/data/pretrain-dataset/pythia-2-biogpt-glove-eval-mix"
 
 export NUM_WORKERS=48
 

@@ -1,9 +1,16 @@
-# TokAlign: Efficient Vocabulary Adaptation via Token Alignment
+# MedicalTokAlign: Vocabulary Adaptation for Medical Domain
 
-The code for the ACL 2025 conference paper "**TokAlign: Efficient Vocabulary Adaptation via Token Alignment**".
+This repository adapts [TokAlign](https://github.com/chongli17/TokAlign) for the medical domain by adapting Pythia-1b to use BioGPT's tokenizer, trained on PubMed abstracts.
+
+**Based on:** TokAlign: Efficient Vocabulary Adaptation via Token Alignment (ACL 2025)
 
 ## Overview
-We propose an efficient method named TokAlign to replace the vocabulary of LLM from the token co-occurrences view, and further transfer the token-level knowledge between models. It first aligns the source vocabulary to the target one by learning a one-to-one mapping matrix for token IDs. Model parameters, including embeddings, are rearranged and progressively fine-tuned for the new vocabulary. The following figure illustrates the method of TokAlign:
+This project applies the TokAlign method to adapt Pythia-1b's vocabulary to BioGPT's tokenizer for medical domain applications. The method aligns the source vocabulary (Pythia-1b) to the target vocabulary (BioGPT) by learning a one-to-one mapping matrix for token IDs. Model parameters, including embeddings, are rearranged and progressively fine-tuned for the new vocabulary using PubMed abstracts.
+
+**Key Differences from Original TokAlign:**
+- **Base Model/Tokenizer**: Pythia-1b (maintained as in original)
+- **Target Model/Tokenizer**: BioGPT (microsoft/biogpt)
+- **Training Corpus**: PubMed abstracts (~1 billion tokens)
 
 ![](figure/method.png)
 
@@ -16,13 +23,29 @@ conda activate tokalign
 pip install -r requirements.txt
 ```
 
-### Prepare tokenized data
+### Prepare PubMed Corpus
 
-1. Download and merge multilingual, code, and math data, e.g., [CulturaX](https://huggingface.co/datasets/uonlp/CulturaX), [the-stack](https://huggingface.co/datasets/bigcode/the-stack) and [proof-pile-2](https://huggingface.co/datasets/EleutherAI/proof-pile-2) from HuggingFace. We provide a small corpus in the "./data/pretrain-corpus" directory for example. 
+1. **Download PubMed abstracts** (~1 billion tokens, ~3.3 million abstracts):
+```bash
+# Install pubget if not already installed
+pip install pubget
 
-2. Tokenize corpus and prepare files of GloVe vector training and evaluation
+# Download and format PubMed abstracts
+python script/download_pubmed_corpus.py
 ```
-# Replace the path with your corpus and tokenizers' path
+
+This script will:
+- Download PubMed abstracts using `pubget`
+- Extract only abstracts (filters out full text)
+- Convert to JSONL format: `{"text": "abstract..."}`
+- Count tokens to track progress toward 1B tokens
+- Save to `data/pretrain-corpus/pubmed-corpus.json`
+
+**Note:** The download may take several hours/days depending on your connection. Consider running on a cloud instance (e.g., RunPod) with better connectivity.
+
+2. **Tokenize corpus and prepare files of GloVe vector training and evaluation**:
+```bash
+# Update paths in the script (already configured for BioGPT)
 vim script/convert2glove_corpus.sh 
 bash script/convert2glove_corpus.sh 
 ```
@@ -61,28 +84,30 @@ vim script/vocab_adaptation.sh
 bash script/vocab_adaptation.sh
 ```
 
-## 📎 Models
+## Configuration
 
-We open-source the following models:
+This repository is configured for:
+- **Base Model**: `EleutherAI/pythia-1b`
+- **Target Model/Tokenizer**: `microsoft/biogpt`
+- **Training Corpus**: PubMed abstracts (~1 billion tokens)
 
-| **Name**                     | **LLaMA3 Tokenizer** | **Qwen2 Tokenizer** | **Gemma Tokenizer** |
-|------------------------------|:--------------------:|:-------------------:|:-------------------:|
-| TokAlign                     |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-1b-LLaMA3-Tokenizer)     |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-1b-Qwen2-Tokenizer)    |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-1b-Gemma-Tokenizer)    |
-| + Token-level Distill         |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-1b-Distill-LLaMA-3-8b)     |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-1b-Distill-Qwen-2-7b)    |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-1b-Distill-Gemma-7b)    |
+All scripts have been updated to use BioGPT instead of Gemma/Qwen2/LLaMA3. See individual scripts in `script/` directory for details.
 
+## Scripts Overview
 
-Table 1. Models from $Pythia_{1b}$
+- `script/download_pubmed_corpus.py` - Download and format PubMed abstracts
+- `script/convert2glove_corpus.sh` - Tokenize corpus for GloVe training
+- `script/token_align.sh` - Train GloVe vectors and compute token alignment
+- `script/eval_align.sh` - Evaluate token alignment matrix
+- `script/init_model.sh` - Initialize model with alignment matrix
+- `script/tokenize_dataset.sh` - Tokenize dataset for vocabulary adaptation
+- `script/vocab_adaptation.sh` - Run vocabulary adaptation training
 
-| **Name**                     | **LLaMA3 Tokenizer** | **Qwen2 Tokenizer** | **Gemma Tokenizer** |
-|------------------------------|:--------------------:|:-------------------:|:-------------------:|
-| TokAlign                     |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-6.9b-LLaMA3-Tokenizer)     |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-6.9b-Qwen2-Tokenizer)    |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-6.9b-Gemma-Tokenizer)    |
-| + Token-level Distill         |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-6.9b-Distill-LLaMA3-8b)     |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-6.9b-Distill-Qwen-2-7b)    |     [🤗](https://huggingface.co/chongli17/TokAlign-Pythia-6.9b-Distill-Gemma-7b)    |
+## Citation
 
+If you use this code, please cite the original TokAlign paper:
 
-Table 2. Models from $Pythia_{6.9b}$
-
-## How to cite our paper?
-```
+```bibtex
 @inproceedings{li-etal-2025-TokAlign,
   author    = {Chong Li and
                Jiajun Zhang and
@@ -94,3 +119,7 @@ Table 2. Models from $Pythia_{6.9b}$
   publisher = "Association for Computational Linguistics",
 }
 ```
+
+## Acknowledgments
+
+This repository is based on [TokAlign](https://github.com/chongli17/TokAlign) by Chong Li, Jiajun Zhang, and Chengqing Zong, adapted for medical domain applications using BioGPT and PubMed data.

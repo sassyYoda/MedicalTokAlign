@@ -4,14 +4,14 @@ export MAIN_DIR="/path/2/TokAlign/"
 cd ${MAIN_DIR}
 export CACHE_DIR="${MAIN_DIR}/data/cache"
 
-export MODLE_PATH="./data/pythia2gemma/TokAlign-Init-1B"
-export TOKENIZER_PATH="./data/pythia2gemma/TokAlign-Init-1B"
+export MODLE_PATH="./data/pythia2biogpt/TokAlign-Init-1B"
+export TOKENIZER_PATH="./data/pythia2biogpt/TokAlign-Init-1B"
 
 # export TRAIN_FILE="./data/pretrain-corpus/pile00.json"
 export TRAIN_FILE="./data/pretrain-corpus/pile00.sample.json"
 
-# export DATASET_PATH="./data/pretrain-dataset/pile00-gemma-tokenized"
-export DATASET_PATH="./data/pretrain-dataset/pile00-sample-gemma-tokenized"
+# export DATASET_PATH="./data/pretrain-dataset/pile00-biogpt-tokenized"
+export DATASET_PATH="./data/pretrain-dataset/pile00-sample-biogpt-tokenized"
 
 export NUM_WORKERS=60
 export BLOCK_SIZE=2048
