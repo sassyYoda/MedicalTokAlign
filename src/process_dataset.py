@@ -323,13 +323,7 @@ def prepare_dataset(tokenizer, data_args, model_args, training_args, logger):
         column_names = raw_datasets["train"].column_names
     else:
         column_names = raw_datasets["validation"].column_names
-    # Check for text column, then abstract (for PubMed datasets), then use first column
-    if "text" in column_names:
-        text_column_name = "text"
-    elif "abstract" in column_names:
-        text_column_name = "abstract"
-    else:
-        text_column_name = column_names[0]
+    text_column_name = "text" if "text" in column_names else column_names[0]
 
     # since this will be pickled to avoid _LazyModule error in Hasher force logger loading before tokenize_function
     tok_logger = transformers.utils.logging.get_logger("transformers.tokenization_utils_base")

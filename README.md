@@ -25,9 +25,24 @@ pip install -r requirements.txt
 
 ### Prepare PubMed Corpus
 
-The scripts are configured to use the [PubMed Abstracts dataset from HuggingFace](https://huggingface.co/datasets/uiyunkim-hub/pubmed-abstract) directly (~27.7M abstracts, updated daily). No manual download needed!
+1. **Download and format PubMed abstracts** from HuggingFace:
+```bash
+# The script will download from HuggingFace and format to JSONL
+python script/prepare_pubmed_corpus_hf.py
+```
 
-**Tokenize corpus and prepare files of GloVe vector training and evaluation**:
+This script will:
+- Load the [PubMed Abstracts dataset](https://huggingface.co/datasets/uiyunkim-hub/pubmed-abstract) from HuggingFace
+- Extract abstracts and format as JSONL: `{"text": "abstract..."}`
+- Count tokens to track progress toward 1B tokens
+- Save to `data/pretrain-corpus/pubmed-corpus.json`
+
+**Note:** You may need to login to HuggingFace first:
+```bash
+huggingface-cli login
+```
+
+2. **Tokenize corpus and prepare files of GloVe vector training and evaluation**:
 ```bash
 # Update paths in the script (already configured for BioGPT)
 vim script/convert2glove_corpus.sh 
@@ -73,13 +88,13 @@ bash script/vocab_adaptation.sh
 This repository is configured for:
 - **Base Model**: `EleutherAI/pythia-1b`
 - **Target Model/Tokenizer**: `microsoft/biogpt`
-- **Training Corpus**: [PubMed Abstracts from HuggingFace](https://huggingface.co/datasets/uiyunkim-hub/pubmed-abstract) (~27.7M abstracts, ~1 billion tokens)
+- **Training Corpus**: PubMed abstracts from [HuggingFace](https://huggingface.co/datasets/uiyunkim-hub/pubmed-abstract) (~27.7M abstracts, ~1 billion tokens)
 
 All scripts have been updated to use BioGPT instead of Gemma/Qwen2/LLaMA3. See individual scripts in `script/` directory for details.
 
 ## Scripts Overview
 
-- `script/download_pubmed_corpus.py` - Download and format PubMed abstracts
+- `script/prepare_pubmed_corpus_hf.py` - Download and format PubMed abstracts from HuggingFace
 - `script/convert2glove_corpus.sh` - Tokenize corpus for GloVe training
 - `script/token_align.sh` - Train GloVe vectors and compute token alignment
 - `script/eval_align.sh` - Evaluate token alignment matrix
