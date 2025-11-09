@@ -4,30 +4,6 @@ export MAIN_DIR="/path/2/TokAlign/"
 # git clone https://github.com/stanfordnlp/GloVe.git
 export GLOVE_DIR="/path/2/glove"
 
-# Detect Python interpreter
-if command -v python3 &> /dev/null; then
-    PYTHON=python3
-elif command -v python &> /dev/null; then
-    PYTHON=python
-else
-    echo "Error: Python not found. Please install Python 3."
-    exit 1
-fi
-
-# Check if required Python packages are installed
-echo "Checking Python dependencies..."
-$PYTHON -c "import transformers" 2>/dev/null || {
-    echo "Error: 'transformers' package not found. Please install dependencies:"
-    echo "  pip install -r requirements.txt"
-    exit 1
-}
-$PYTHON -c "import tqdm" 2>/dev/null || {
-    echo "Error: 'tqdm' package not found. Please install dependencies:"
-    echo "  pip install -r requirements.txt"
-    exit 1
-}
-echo "Python dependencies OK."
-
 export MODLE_PATH1="EleutherAI/pythia-1b"
 export TOKENIZER_PATH1="EleutherAI/pythia-1b"
 export GLOVE_TRAIN_PATH1="${MAIN_DIR}/data/pretrain-dataset/mix-pythia-glove"
