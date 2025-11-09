@@ -26,21 +26,71 @@ def eval_trans_matrix(
 
     td = trans
 
-    tgt_len = len(list(trans.keys()))
+    # Convert alignment matrix keys to strings if needed (JSON loads keys as strings)
+    # Check key format
+    sample_key = list(td.keys())[0] if td else None
+    if sample_key and isinstance(sample_key, str):
+        # Keys are strings, which is what we need
+        pass
+    else:
+        # Convert to string keys if they're integers
+        td = {str(k): v for k, v in td.items()}
 
+    # Diagnostics
+    total_tokens = 0
+    missing_tokens = 0
     total_b = 0
+    sample_count = 0
+    
+    # Analyze mapping distribution
+    from collections import Counter
+    mapping_counter = Counter()  # Count how many BioGPT tokens map to each Pythia token
+    unique_mapped_tokens = set()
+    
     # for s in tqdm(eval_data):
     for s in eval_data:
         # src: source token id, e.g., pythia ids, tgt: target token id, e.g., gemma ids
         src, tgt = s[0], s[1]
+        
+        # Count missing tokens
+        for tid in tgt:
+            total_tokens += 1
+            if tid not in td:
+                missing_tokens += 1
 
         # using td dict by maping target ids to source ids
-        pred = [str(td[tid]) for tid in tgt]
+        pred = [str(td.get(tid, "<UNK>")) for tid in tgt]  # Use .get() to handle missing tokens
+        
+        # Track mapping distribution
+        for mapped_token in pred:
+            if mapped_token != "<UNK>":
+                mapping_counter[mapped_token] += 1
+                unique_mapped_tokens.add(mapped_token)
+        
         total_b += sentence_bleu([src], pred, bleu_weights)
-
-        # using td dict by maping source ids to target ids
-        # pred = [str(td[sid]) for sid in src]
-        # total_b += sentence_bleu([tgt], pred, bleu_weights)
+        
+        # Print first few examples for debugging
+        if sample_count < 3:
+            print(f"\nSample {sample_count + 1}:")
+            print(f"  Source (Pythia) tokens: {src[:10]}...")  # First 10 tokens
+            print(f"  Target (BioGPT) tokens: {tgt[:10]}...")
+            print(f"  Predicted (mapped): {pred[:10]}...")
+            sample_count += 1
+    
+    # Calculate mapping statistics
+    total_mappings = sum(mapping_counter.values())
+    most_common_mappings = mapping_counter.most_common(10)
+    
+    print(f"\nDiagnostics:")
+    print(f"  Alignment matrix size: {len(td)} tokens")
+    print(f"  Total target tokens in eval: {total_tokens}")
+    print(f"  Missing tokens (not in alignment): {missing_tokens} ({100*missing_tokens/max(total_tokens,1):.2f}%)")
+    print(f"  Unique Pythia tokens mapped to: {len(unique_mapped_tokens)}")
+    print(f"  Total mappings: {total_mappings}")
+    print(f"  Average mappings per unique Pythia token: {total_mappings/max(len(unique_mapped_tokens),1):.2f}")
+    print(f"\n  Top 10 most-mapped-to Pythia tokens:")
+    for token_id, count in most_common_mappings:
+        print(f"    Token {token_id}: {count} BioGPT tokens map to it ({100*count/total_mappings:.2f}% of all mappings)")
 
     print(f"Average bleu: {total_b/len(eval_data)}")
 
