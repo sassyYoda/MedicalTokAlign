@@ -4,10 +4,10 @@ export MAIN_DIR="/path/2/TokAlign/"
 cd ${MAIN_DIR}
 
 # The path of token alignment matrix
-# export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix.json"
-export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix_demo.json"
+export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix.json"
+# export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix_demo.json"
 
-export MATRIX_EVAL_DATA_PATH="${MAIN_DIR}/data/pretrain-dataset/pythia-2-biogpt-eval"
+export MATRIX_EVAL_DATA_PATH="${MAIN_DIR}/data/pretrain-dataset/pythia-2-biogpt-glove-eval-mix"
 
 # BLEU-1 evaluation
 export EVAL_METHOD=bleu
