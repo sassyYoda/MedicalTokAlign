@@ -11,7 +11,8 @@ export MODEL="1b"
 
 export TGT="biogpt"
 
-MODEL_NAME="./data/pythia2${TGT}/${MODEL}/glove"
+# Use the initialized model from init_model.sh
+MODEL_NAME="./data/pythia2${TGT}/TokAlign-Init-1B"
 
 # export DATASET_PATH="./data/pretrain-dataset/pile00-${TGT}-tokenized"
 export DATASET_PATH="./data/pretrain-dataset/pubmed-${TGT}-tokenized"

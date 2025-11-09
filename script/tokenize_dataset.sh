@@ -16,7 +16,7 @@ export DATASET_PATH="./data/pretrain-dataset/pubmed-biogpt-tokenized"
 export NUM_WORKERS=60
 export BLOCK_SIZE=2048
 
-HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+# HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1  # Commented out to allow model downloads if needed
 
 python -u src/process_dataset.py \
   --model_name_or_path ${MODLE_PATH} \

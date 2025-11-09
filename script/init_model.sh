@@ -3,8 +3,8 @@
 export MAIN_DIR="/path/2/TokAlign/"
 cd ${MAIN_DIR}
 
-# export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix.json"
-export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix_demo.json"
+export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix.json"
+# export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix_demo.json"
 
 export MODLE_PATH1="EleutherAI/pythia-1b"
 
