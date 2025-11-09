@@ -26,7 +26,8 @@ OUTPUT_FILE = MAIN_DIR / "data" / "pretrain-corpus" / "pubmed-corpus.json"
 TARGET_TOKENS = 1_000_000_000  # 1 billion tokens
 TOKENIZER_NAME = "EleutherAI/pythia-1b"  # Use Pythia tokenizer for counting
 BATCH_SIZE = 1000  # Process this many abstracts at once
-NUM_WORKERS = None  # None = use all available CPU cores
+NUM_WORKERS = None  # None = auto-detect (capped at 32), or set to specific number
+MAX_WORKERS = 32  # Maximum number of workers to use (prevents overhead with too many cores)
 
 
 # Global tokenizer for worker processes (initialized once per worker)
@@ -113,43 +114,83 @@ def main():
     print(f"   Output: {OUTPUT_FILE}")
     
     # Determine number of workers
-    num_workers = NUM_WORKERS if NUM_WORKERS else cpu_count()
-    print(f"   Using {num_workers} CPU cores for parallel processing\n")
+    if NUM_WORKERS is not None:
+        num_workers = NUM_WORKERS
+    else:
+        # Auto-detect but cap at MAX_WORKERS to avoid overhead
+        detected_cores = cpu_count()
+        num_workers = min(detected_cores, MAX_WORKERS)
+        if detected_cores > MAX_WORKERS:
+            print(f"   Detected {detected_cores} CPU cores, capping at {MAX_WORKERS} workers")
+    
+    print(f"   Using {num_workers} CPU cores for parallel processing")
+    print(f"   Batch size: {BATCH_SIZE} abstracts per batch\n")
     
     total_tokens = 0
     total_abstracts = 0
     skipped_empty = 0
     skipped_short = 0
     
-    # Create batches
-    dataset_list = list(dataset)  # Convert to list for batching
-    batches = [dataset_list[i:i + BATCH_SIZE] for i in range(0, len(dataset_list), BATCH_SIZE)]
+    # Create batches - process in chunks to avoid loading entire dataset into memory
+    # We'll process the dataset iteratively rather than converting to list
+    print(f"   Creating batches from dataset (this may take a moment for large datasets)...")
+    
+    # Process in chunks to avoid memory issues
+    # We'll create batches on-the-fly rather than loading everything
+    def create_batches():
+        """Generator that yields batches from the dataset."""
+        batch = []
+        for item in dataset:
+            batch.append(item)
+            if len(batch) >= BATCH_SIZE:
+                yield batch
+                batch = []
+        if batch:  # Yield remaining items
+            yield batch
+    
+    # Count total batches (approximate, for progress bar)
+    total_items = len(dataset)
+    total_batches = (total_items + BATCH_SIZE - 1) // BATCH_SIZE
+    print(f"   Dataset has {total_items:,} items, will create ~{total_batches:,} batches\n")
+    
+    print(f"   Initializing {num_workers} worker processes (this may take a moment)...")
     
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as jsonfile:
-        # Process batches in parallel
-        # Initialize each worker with the tokenizer
-        with Pool(processes=num_workers, initializer=init_worker, initargs=(TOKENIZER_NAME,)) as pool:
-            # Use imap for progress tracking
-            results = pool.imap(process_abstract_batch, batches)
-            
-            for batch_results, batch_empty, batch_short in tqdm(
-                results, 
-                total=len(batches),
-                desc="Processing batches"
-            ):
-                skipped_empty += batch_empty
-                skipped_short += batch_short
+        try:
+            # Process batches in parallel
+            # Initialize each worker with the tokenizer
+            with Pool(processes=num_workers, initializer=init_worker, initargs=(TOKENIZER_NAME,)) as pool:
+                print("   Workers initialized. Starting batch processing...\n")
                 
-                # Write results from this batch
-                for json_line, token_count in batch_results:
-                    jsonfile.write(json_line + "\n")
-                    total_tokens += token_count
-                    total_abstracts += 1
+                # Use imap for progress tracking
+                batch_generator = create_batches()
+                results = pool.imap(process_abstract_batch, batch_generator)
                 
-                # Check if we've reached target
-                if total_tokens >= TARGET_TOKENS:
-                    print(f"\n✓ Reached target of {TARGET_TOKENS:,} tokens!")
-                    break
+                for batch_results, batch_empty, batch_short in tqdm(
+                    results, 
+                    total=total_batches,
+                    desc="Processing batches"
+                ):
+                    skipped_empty += batch_empty
+                    skipped_short += batch_short
+                    
+                    # Write results from this batch
+                    for json_line, token_count in batch_results:
+                        jsonfile.write(json_line + "\n")
+                        total_tokens += token_count
+                        total_abstracts += 1
+                    
+                    # Check if we've reached target
+                    if total_tokens >= TARGET_TOKENS:
+                        print(f"\n✓ Reached target of {TARGET_TOKENS:,} tokens!")
+                        break
+        except KeyboardInterrupt:
+            print("\n⚠ Interrupted by user. Partial results saved.")
+            raise
+        except Exception as e:
+            print(f"\n✗ Error during processing: {e}")
+            print("   Partial results may have been saved.")
+            raise
     
     print(f"\n{'='*70}")
     print("✓ Process completed!")
