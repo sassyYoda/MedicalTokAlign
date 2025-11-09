@@ -4,6 +4,30 @@ export MAIN_DIR="/path/2/TokAlign/"
 # git clone https://github.com/stanfordnlp/GloVe.git
 export GLOVE_DIR="/path/2/glove"
 
+# Detect Python interpreter
+if command -v python3 &> /dev/null; then
+    PYTHON=python3
+elif command -v python &> /dev/null; then
+    PYTHON=python
+else
+    echo "Error: Python not found. Please install Python 3."
+    exit 1
+fi
+
+# Check if required Python packages are installed
+echo "Checking Python dependencies..."
+$PYTHON -c "import transformers" 2>/dev/null || {
+    echo "Error: 'transformers' package not found. Please install dependencies:"
+    echo "  pip install -r requirements.txt"
+    exit 1
+}
+$PYTHON -c "import tqdm" 2>/dev/null || {
+    echo "Error: 'tqdm' package not found. Please install dependencies:"
+    echo "  pip install -r requirements.txt"
+    exit 1
+}
+echo "Python dependencies OK."
+
 export MODLE_PATH1="EleutherAI/pythia-1b"
 export TOKENIZER_PATH1="EleutherAI/pythia-1b"
 export GLOVE_TRAIN_PATH1="${MAIN_DIR}/data/pretrain-dataset/mix-pythia-glove"
@@ -37,15 +61,27 @@ mv ${GLOVE_VECTOR_NAME2}.txt ${GLOVE_VECTOR_PATH2}
 # Stage-2: token ID align
 cd ${MAIN_DIR}
 
-export VOCAB_SIZE1=$(python src/count_vocab.py -m ${MODLE_PATH1})
-export VOCAB_SIZE2=$(python src/count_vocab.py -m ${MODLE_PATH2})
+# Check if GloVe vector files exist
+if [ ! -f "${GLOVE_VECTOR_PATH1}" ]; then
+    echo "Error: GloVe vector file not found: ${GLOVE_VECTOR_PATH1}"
+    echo "Please ensure Stage-1 completed successfully."
+    exit 1
+fi
+if [ ! -f "${GLOVE_VECTOR_PATH2}" ]; then
+    echo "Error: GloVe vector file not found: ${GLOVE_VECTOR_PATH2}"
+    echo "Please ensure Stage-1 completed successfully."
+    exit 1
+fi
 
-python src/count_dict.py \
+export VOCAB_SIZE1=$($PYTHON src/count_vocab.py -m ${MODLE_PATH1})
+export VOCAB_SIZE2=$($PYTHON src/count_vocab.py -m ${MODLE_PATH2})
+
+$PYTHON src/count_dict.py \
     -s ${TOKENIZER_PATH1} \
     -t ${TOKENIZER_PATH2} \
     -o ${TGT_ID_2_SRC_ID_GOLD_PATH}
 
-python src/cal_trans_matrix.py \
+$PYTHON src/cal_trans_matrix.py \
     -s ${GLOVE_VECTOR_PATH1} \
     -s1 ${VOCAB_SIZE1} \
     -t ${GLOVE_VECTOR_PATH2} \
