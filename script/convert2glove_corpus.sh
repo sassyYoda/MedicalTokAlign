@@ -1,6 +1,8 @@
 #!/bin/sh
 
-export MAIN_DIR="/path/2/TokAlign/"
+# Auto-detect MAIN_DIR from script location
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export MAIN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd ${MAIN_DIR}
 export CACHE_DIR="${MAIN_DIR}/data/cache"
 
@@ -27,7 +29,7 @@ export MATRIX_EVAL_PATH="${MAIN_DIR}/data/pretrain-dataset/pythia-2-biogpt-glove
 export NUM_WORKERS=48
 
 tokenize () {
-  HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1
+  # Removed offline flags to allow model downloads if needed
   python -u src/process_dataset.py \
     --model_name_or_path ${MODLE_PATH} \
     --tokenizer_name ${TOKENIZER_PATH} \

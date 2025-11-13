@@ -1,8 +1,10 @@
 #!/bin/sh
 
-export MAIN_DIR="/path/2/TokAlign/"
+# Auto-detect MAIN_DIR from script location
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export MAIN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # git clone https://github.com/stanfordnlp/GloVe.git
-export GLOVE_DIR="/path/2/glove"
+export GLOVE_DIR="${MAIN_DIR}/GloVe"
 
 export MODLE_PATH1="EleutherAI/pythia-1b"
 export TOKENIZER_PATH1="EleutherAI/pythia-1b"

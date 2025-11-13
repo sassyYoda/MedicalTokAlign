@@ -1,6 +1,8 @@
 #!/bin/sh
 
-export MAIN_DIR="/path/2/TokAlign/"
+# Auto-detect MAIN_DIR from script location
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export MAIN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd ${MAIN_DIR}
 
 export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix.json"

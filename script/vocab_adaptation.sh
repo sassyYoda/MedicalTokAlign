@@ -1,10 +1,13 @@
 #!/bin/sh
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+# Single H100 GPU configuration
+export CUDA_VISIBLE_DEVICES=0
 
-export MAIN_DIR="/path/2/TokAlign/"
+# Auto-detect MAIN_DIR from script location
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+export MAIN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 cd ${MAIN_DIR}
 
-export GPUNUM=8
+export GPUNUM=1
 export MASTER_PORT=16899
 
 export MODEL="1b"
@@ -19,9 +22,10 @@ export DATASET_PATH="./data/pretrain-dataset/pubmed-${TGT}-tokenized"
 
 export CONFIG_FILE="./data/Deepspeed-Configs/zero3.yaml"
 
-export TRAIN_BS=8
+# Adjusted for single H100: effective batch size = 1 GPU × 16 × 8 = 128
+export TRAIN_BS=16
 export EVAL_BS=1
-export GRADIENT_ACC=16
+export GRADIENT_ACC=8
 
 export BLOCK_SIZE=2048
 
