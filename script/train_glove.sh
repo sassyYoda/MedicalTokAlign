@@ -15,7 +15,14 @@ COOCCURRENCE_FILE=cooccurrence.src.bin
 COOCCURRENCE_SHUF_FILE=cooccurrence.shuf.src.bin
 BUILDDIR=build
 VERBOSE=2
-MEMORY=4096.0
+# Auto-detect available memory and set MEMORY parameter (in MB, use 50% of available RAM)
+# GloVe uses this for buffer size, not total allocation
+AVAILABLE_RAM_MB=$(free -m | awk '/^Mem:/{print $2}' 2>/dev/null || echo 8192)
+MEMORY_MB=$((AVAILABLE_RAM_MB / 2))
+# Cap at reasonable maximum (16GB) and minimum (2GB)
+[ $MEMORY_MB -gt 16384 ] && MEMORY_MB=16384
+[ $MEMORY_MB -lt 2048 ] && MEMORY_MB=2048
+MEMORY="${MEMORY_MB}.0"
 VOCAB_MIN_COUNT=5
 VECTOR_SIZE=300
 MAX_ITER=15
@@ -57,10 +64,7 @@ if ls overflow_*.bin 1> /dev/null 2>&1; then
     }
 else
     echo "No overflow files found, proceeding with shuffle..."
-    $BUILDDIR/shuffle -memory $MEMORY -verbose $VERBOSE < $COOCCURRENCE_FILE > $COOCCURRENCE_SHUF_FILE || {
-        echo "Error: Shuffle failed. Check if cooccurrence file exists and is valid."
-        exit 1
-    }
+    $BUILDDIR/shuffle -memory $MEMORY -verbose $VERBOSE < $COOCCURRENCE_FILE > $COOCCURRENCE_SHUF_FILE
 fi
 
 echo "$ $BUILDDIR/glove -save-file $SAVE_FILE -threads $NUM_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE"
