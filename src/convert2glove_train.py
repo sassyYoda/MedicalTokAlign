@@ -1,5 +1,6 @@
 import datasets
 import argparse
+from tqdm import tqdm
 
 def convert2train(
     src_path = "llama-3-tok-20GB_tk",
@@ -9,9 +10,11 @@ def convert2train(
     max_line = 1000000
 ):
     d = datasets.load_from_disk(src_path)[key]
-
+    total_items = min(max_line, len(d))
+    
+    print(f"Processing {total_items:,} examples...")
     with open(tgt_path, "w") as f:
-        for i in range(min(max_line, len(d))):
+        for i in tqdm(range(total_items), desc="Extracting token IDs"):
             data = d[i]["input_ids"]
             if len(data) < min_line_len:
                 continue
@@ -30,8 +33,9 @@ def convert2eval(
     d2 = datasets.load_from_disk(tgt_tok_path)
     assert(len(d1[key]) == len(d2[key]))
 
+    print(f"Processing {max_line:,} aligned pairs...")
     with open(file_path, "w") as f:
-        for i in range(max_line):
+        for i in tqdm(range(max_line), desc="Extracting aligned pairs"):
             data1 = d1[key][i]["input_ids"]
             data2 = d2[key][i]["input_ids"]
             if len(data1) < min_line_len or len(data2) < min_line_len:
