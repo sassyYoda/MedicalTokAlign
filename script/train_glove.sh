@@ -21,7 +21,8 @@ VECTOR_SIZE=300
 MAX_ITER=15
 WINDOW_SIZE=15
 BINARY=2
-NUM_THREADS=64
+# Auto-detect CPU threads (use all cores)
+NUM_THREADS=$(nproc 2>/dev/null || echo 4)
 X_MAX=10
 
 if hash python 2>/dev/null; then

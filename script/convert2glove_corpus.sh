@@ -26,7 +26,12 @@ export GLOVE_TRAIN_PATH2="${MAIN_DIR}/data/pretrain-dataset/mix-biogpt-glove"
 
 export MATRIX_EVAL_PATH="${MAIN_DIR}/data/pretrain-dataset/pythia-2-biogpt-glove-eval-mix"
 
-export NUM_WORKERS=48
+# Auto-detect CPU workers (75% of cores, max 64)
+CPU_CORES=$(nproc 2>/dev/null || echo 4)
+NUM_WORKERS=$((CPU_CORES * 3 / 4))
+[ $NUM_WORKERS -gt 64 ] && NUM_WORKERS=64
+[ $NUM_WORKERS -lt 1 ] && NUM_WORKERS=1
+export NUM_WORKERS
 
 tokenize () {
   # Removed offline flags to allow model downloads if needed

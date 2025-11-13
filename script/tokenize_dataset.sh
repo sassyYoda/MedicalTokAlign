@@ -15,7 +15,12 @@ export TRAIN_FILE="./data/pretrain-corpus/pubmed-corpus.json"
 # export DATASET_PATH="./data/pretrain-dataset/pile00-biogpt-tokenized"
 export DATASET_PATH="./data/pretrain-dataset/pubmed-biogpt-tokenized"
 
-export NUM_WORKERS=60
+# Auto-detect CPU workers (75% of cores, max 64)
+CPU_CORES=$(nproc 2>/dev/null || echo 4)
+NUM_WORKERS=$((CPU_CORES * 3 / 4))
+[ $NUM_WORKERS -gt 64 ] && NUM_WORKERS=64
+[ $NUM_WORKERS -lt 1 ] && NUM_WORKERS=1
+export NUM_WORKERS
 export BLOCK_SIZE=2048
 
 # HF_DATASETS_OFFLINE=1 TRANSFORMERS_OFFLINE=1  # Commented out to allow model downloads if needed
