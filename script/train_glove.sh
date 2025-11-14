@@ -10,6 +10,13 @@ set -e
 # This prevents "Illegal instruction" errors when binaries were compiled on a different machine
 echo "Cleaning and rebuilding GloVe for current CPU architecture..."
 
+# Check environment and increase stack size if needed (GloVe needs large stack for big datasets)
+STACK_SIZE=$(ulimit -s 2>/dev/null || echo "unknown")
+if [ "$STACK_SIZE" != "unlimited" ] && [ "$STACK_SIZE" != "unknown" ] && [ "$STACK_SIZE" -lt 32768 ]; then
+    echo "Increasing stack size limit (current: ${STACK_SIZE}KB) for large dataset..."
+    ulimit -s unlimited 2>/dev/null || ulimit -s 65536 2>/dev/null || true
+fi
+
 # Fix Makefile compilation flags if needed (prevents segfaults with large datasets)
 # Get current directory (should be GloVe directory when called from token_align.sh)
 CURRENT_DIR=$(pwd)
