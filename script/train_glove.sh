@@ -9,6 +9,19 @@ set -e
 # Clean and rebuild to ensure binaries are compiled for current CPU architecture
 # This prevents "Illegal instruction" errors when binaries were compiled on a different machine
 echo "Cleaning and rebuilding GloVe for current CPU architecture..."
+
+# Fix Makefile compilation flags if needed (prevents segfaults with large datasets)
+# Get current directory (should be GloVe directory when called from token_align.sh)
+CURRENT_DIR=$(pwd)
+if [ -f "${MAIN_DIR}/script/fix_glove_makefile.sh" ]; then
+    echo "Checking and fixing GloVe Makefile compilation flags..."
+    bash ${MAIN_DIR}/script/fix_glove_makefile.sh "$CURRENT_DIR" 2>/dev/null || true
+elif [ -f "./script/fix_glove_makefile.sh" ]; then
+    # Fallback if MAIN_DIR not set
+    echo "Checking and fixing GloVe Makefile compilation flags..."
+    bash ./script/fix_glove_makefile.sh "$CURRENT_DIR" 2>/dev/null || true
+fi
+
 make clean 2>/dev/null || true
 make
 
