@@ -20,7 +20,13 @@ This project applies the TokAlign method to adapt Pythia-1b's vocabulary to BioG
 ```
 conda create -n tokalign python=3.10
 conda activate tokalign
-pip install -r requirements.txt
+
+# Install all dependencies (including flash-attn with proper compilation flags)
+bash script/install_dependencies.sh
+
+# Or install manually:
+# pip install -r requirements.txt
+# pip install flash-attn --no-build-isolation --no-cache-dir --no-binary flash-attn
 ```
 
 ### Prepare PubMed Corpus

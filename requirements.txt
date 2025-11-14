@@ -8,7 +8,7 @@ peft==0.8.2
 nltk==3.8
 scikit-learn==1.2.1
 scipy==1.12.0
-flash-attn==2.5.0
+# flash-attn==2.5.0  # Installed separately via install_dependencies.sh with compilation flags
 sacremoses==0.1.1
 sentence-transformers>=2.2.0
 tf-keras>=2.15.0
