@@ -1,13 +1,14 @@
-# MedicalTokAlign: Vocabulary Adaptation for Medical Domain
+# TokAlign: Vocabulary Adaptation for Medical Domain
 
-This repository adapts [TokAlign](https://github.com/chongli17/TokAlign) for the medical domain by adapting Pythia-1b to use BioGPT's tokenizer, trained on PubMed abstracts.
+This repository adapts [TokAlign](https://github.com/ZNLP/TokAlign) for the medical domain by adapting Pythia-1b to use BioGPT's tokenizer, trained on PubMed abstracts.
 
-**Based on:** TokAlign: Efficient Vocabulary Adaptation via Token Alignment (ACL 2025)
+The code for the ACL 2025 conference paper "**TokAlign: Efficient Vocabulary Adaptation via Token Alignment**".
 
 ## Overview
-This project applies the TokAlign method to adapt Pythia-1b's vocabulary to BioGPT's tokenizer for medical domain applications. The method aligns the source vocabulary (Pythia-1b) to the target vocabulary (BioGPT) by learning a one-to-one mapping matrix for token IDs. Model parameters, including embeddings, are rearranged and progressively fine-tuned for the new vocabulary using PubMed abstracts.
 
-**Key Differences from Original TokAlign:**
+We propose an efficient method named TokAlign to replace the vocabulary of LLM from the token co-occurrences view, and further transfer the token-level knowledge between models. It first aligns the source vocabulary to the target one by learning a one-to-one mapping matrix for token IDs. Model parameters, including embeddings, are rearranged and progressively fine-tuned for the new vocabulary.
+
+**This adaptation:**
 - **Base Model/Tokenizer**: Pythia-1b (maintained as in original)
 - **Target Model/Tokenizer**: BioGPT (microsoft/biogpt)
 - **Training Corpus**: PubMed abstracts (~1 billion tokens)
@@ -100,7 +101,7 @@ All scripts have been updated to use BioGPT instead of Gemma/Qwen2/LLaMA3. See i
 
 ## Scripts Overview
 
-- `script/prepare_pubmed_corpus_hf.py` - Download and format PubMed abstracts from HuggingFace
+- `script/prepare_pubmed_corpus_hf.py` - Download and format PubMed abstracts from HuggingFace (BioGPT-specific)
 - `script/convert2glove_corpus.sh` - Tokenize corpus for GloVe training
 - `script/token_align.sh` - Train GloVe vectors and compute token alignment
 - `script/eval_align.sh` - Evaluate token alignment matrix
@@ -127,4 +128,4 @@ If you use this code, please cite the original TokAlign paper:
 
 ## Acknowledgments
 
-This repository is based on [TokAlign](https://github.com/chongli17/TokAlign) by Chong Li, Jiajun Zhang, and Chengqing Zong, adapted for medical domain applications using BioGPT and PubMed data.
+This repository is based on [TokAlign](https://github.com/ZNLP/TokAlign) by Chong Li, Jiajun Zhang, and Chengqing Zong, adapted for medical domain applications using BioGPT and PubMed data.
