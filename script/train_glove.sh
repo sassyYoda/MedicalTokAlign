@@ -6,6 +6,10 @@ set -e
 # Makes programs, downloads sample data, trains a GloVe model, and then evaluates it.
 # One optional argument can specify the language used for eval script: matlab, octave or [default] python
 
+# Clean and rebuild to ensure binaries are compiled for current CPU architecture
+# This prevents "Illegal instruction" errors when binaries were compiled on a different machine
+echo "Cleaning and rebuilding GloVe for current CPU architecture..."
+make clean 2>/dev/null || true
 make
 
 CORPUS=$1
@@ -53,7 +57,25 @@ echo "$ $BUILDDIR/vocab_count -min-count $VOCAB_MIN_COUNT -verbose $VERBOSE < $C
 $BUILDDIR/vocab_count -min-count $VOCAB_MIN_COUNT -verbose $VERBOSE < $CORPUS > $VOCAB_FILE
 
 echo "$ $BUILDDIR/cooccur -memory $MEMORY -vocab-file $VOCAB_FILE -verbose $VERBOSE -window-size $WINDOW_SIZE < $CORPUS > $COOCCURRENCE_FILE"
-$BUILDDIR/cooccur -memory $MEMORY -vocab-file $VOCAB_FILE -verbose $VERBOSE -window-size $WINDOW_SIZE < $CORPUS > $COOCCURRENCE_FILE
+if ! $BUILDDIR/cooccur -memory $MEMORY -vocab-file $VOCAB_FILE -verbose $VERBOSE -window-size $WINDOW_SIZE < $CORPUS > $COOCCURRENCE_FILE; then
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -eq 132 ] || [ $EXIT_CODE -eq 139 ]; then
+        # Exit code 132 = SIGILL (Illegal instruction), 139 = SIGSEGV (Segmentation fault)
+        echo "Error: Illegal instruction or segfault detected (exit code $EXIT_CODE)."
+        echo "This usually means GloVe was compiled on a different CPU."
+        echo "Forcing clean rebuild..."
+        make clean
+        make
+        echo "Retrying cooccur..."
+        if ! $BUILDDIR/cooccur -memory $MEMORY -vocab-file $VOCAB_FILE -verbose $VERBOSE -window-size $WINDOW_SIZE < $CORPUS > $COOCCURRENCE_FILE; then
+            echo "Error: cooccur still failing after rebuild. Check CPU compatibility."
+            exit 1
+        fi
+    else
+        echo "Error: cooccur failed with exit code $EXIT_CODE"
+        exit 1
+    fi
+fi
 
 echo "$ $BUILDDIR/shuffle -memory $MEMORY -verbose $VERBOSE < $COOCCURRENCE_FILE > $COOCCURRENCE_SHUF_FILE"
 # Check if overflow files exist before shuffling
