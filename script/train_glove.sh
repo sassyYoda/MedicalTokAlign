@@ -38,8 +38,7 @@ replacement = '''    {
         // Cap at 500M records (~6GB) to prevent segfault on very large datasets
         if (calculated_size > 500000000LL) {
             array_size = 500000000LL;
-            if (verbose > 0) fprintf(stderr, "Warning: array_size capped at 500M records (%.2f GB) to prevent overflow\\n", 
-                    (double)(array_size * sizeof_crec) / (double)bytes_per_gb);
+            if (verbose > 0) fprintf(stderr, "Warning: array_size capped at 500M records (%.2f GB) to prevent overflow\\n", (double)(array_size * sizeof_crec) / (double)bytes_per_gb);
         } else if (calculated_size < 1000000LL) {
             array_size = 1000000LL;
         } else {
