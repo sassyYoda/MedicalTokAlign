@@ -29,13 +29,45 @@ GLOVE_VECTOR_NAME1=$(basename ${GLOVE_VECTOR_PATH1})
 GLOVE_VECTOR_NAME1="${GLOVE_VECTOR_NAME1%.*}"
 printf "\n### Train GloVe vector ${GLOVE_VECTOR_NAME1} with ${GLOVE_TRAIN_PATH1}  ###\n\n"
 bash ${MAIN_DIR}/script/train_glove.sh ${GLOVE_TRAIN_PATH1} ${GLOVE_VECTOR_NAME1}
-mv ${GLOVE_VECTOR_NAME1}.txt ${GLOVE_VECTOR_PATH1}
+
+# GloVe creates .txt file (even with binary=2, it creates .txt for the text format)
+# Check if file exists before moving
+if [ -f "${GLOVE_VECTOR_NAME1}.txt" ]; then
+    mv ${GLOVE_VECTOR_NAME1}.txt ${GLOVE_VECTOR_PATH1}
+elif [ -f "${GLOVE_VECTOR_NAME1}.bin" ]; then
+    echo "Warning: Found .bin file instead of .txt. GloVe may have saved in binary format."
+    echo "Converting binary to text format..."
+    # If binary format, we'd need to convert it, but for now just report the issue
+    echo "Error: Binary format not supported. Please check GloVe training completed successfully."
+    exit 1
+else
+    echo "Error: GloVe output file not found: ${GLOVE_VECTOR_NAME1}.txt or .bin"
+    echo "This usually means GloVe training failed (segfault or other error)."
+    echo "Check the training output above for errors."
+    exit 1
+fi
 
 GLOVE_VECTOR_NAME2=$(basename ${GLOVE_VECTOR_PATH2})
 GLOVE_VECTOR_NAME2="${GLOVE_VECTOR_NAME2%.*}"
 printf "\n### Train GloVe vector ${GLOVE_VECTOR_NAME2} with ${GLOVE_TRAIN_PATH2}  ###\n\n"
 bash ${MAIN_DIR}/script/train_glove.sh ${GLOVE_TRAIN_PATH2} ${GLOVE_VECTOR_NAME2}
-mv ${GLOVE_VECTOR_NAME2}.txt ${GLOVE_VECTOR_PATH2}
+
+# GloVe creates .txt file (even with binary=2, it creates .txt for the text format)
+# Check if file exists before moving
+if [ -f "${GLOVE_VECTOR_NAME2}.txt" ]; then
+    mv ${GLOVE_VECTOR_NAME2}.txt ${GLOVE_VECTOR_PATH2}
+elif [ -f "${GLOVE_VECTOR_NAME2}.bin" ]; then
+    echo "Warning: Found .bin file instead of .txt. GloVe may have saved in binary format."
+    echo "Converting binary to text format..."
+    # If binary format, we'd need to convert it, but for now just report the issue
+    echo "Error: Binary format not supported. Please check GloVe training completed successfully."
+    exit 1
+else
+    echo "Error: GloVe output file not found: ${GLOVE_VECTOR_NAME2}.txt or .bin"
+    echo "This usually means GloVe training failed (segfault or other error)."
+    echo "Check the training output above for errors."
+    exit 1
+fi
 
 
 # Stage-2: token ID align

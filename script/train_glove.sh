@@ -28,8 +28,10 @@ VECTOR_SIZE=300
 MAX_ITER=15
 WINDOW_SIZE=15
 BINARY=2
-# Auto-detect CPU threads (use all cores)
+# Auto-detect CPU threads (use all cores, but cap for stability)
 NUM_THREADS=$(nproc 2>/dev/null || echo 4)
+# Cap threads at 16 to avoid memory/contention issues with very large datasets
+[ $NUM_THREADS -gt 16 ] && NUM_THREADS=16
 X_MAX=10
 
 if hash python 2>/dev/null; then
@@ -91,4 +93,18 @@ else
 fi
 
 echo "$ $BUILDDIR/glove -save-file $SAVE_FILE -threads $NUM_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE"
-$BUILDDIR/glove -save-file $SAVE_FILE -threads $NUM_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE
+
+# Try training with full threads first
+$BUILDDIR/glove -save-file $SAVE_FILE -threads $NUM_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE || {
+    echo "Warning: GloVe training failed with $NUM_THREADS threads, trying with fewer threads..."
+    # Reduce threads to avoid memory/contention issues
+    REDUCED_THREADS=$((NUM_THREADS / 2))
+    [ $REDUCED_THREADS -lt 1 ] && REDUCED_THREADS=1
+    echo "Retrying with $REDUCED_THREADS threads..."
+    $BUILDDIR/glove -save-file $SAVE_FILE -threads $REDUCED_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE || {
+        echo "Error: GloVe training failed even with reduced threads."
+        echo "This may be due to memory limitations or a bug in GloVe with very large datasets."
+        echo "Check available memory: free -h"
+        exit 1
+    }
+}
