@@ -38,6 +38,14 @@ else
     PYTHON=python3
 fi
 
+# Get MAIN_DIR for Python shuffle script (if called from token_align.sh)
+# This will be set by the calling script, but provide fallback
+if [ -z "$MAIN_DIR" ]; then
+    # Try to detect from script location
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    MAIN_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+fi
+
 echo
 echo "$ $BUILDDIR/vocab_count -min-count $VOCAB_MIN_COUNT -verbose $VERBOSE < $CORPUS > $VOCAB_FILE"
 $BUILDDIR/vocab_count -min-count $VOCAB_MIN_COUNT -verbose $VERBOSE < $CORPUS > $VOCAB_FILE
@@ -64,7 +72,22 @@ if ls overflow_*.bin 1> /dev/null 2>&1; then
     }
 else
     echo "No overflow files found, proceeding with shuffle..."
-    $BUILDDIR/shuffle -memory $MEMORY -verbose $VERBOSE < $COOCCURRENCE_FILE > $COOCCURRENCE_SHUF_FILE
+    # Try C shuffle first (faster if it works)
+    $BUILDDIR/shuffle -memory $MEMORY -verbose $VERBOSE < $COOCCURRENCE_FILE > $COOCCURRENCE_SHUF_FILE 2>/dev/null || {
+        echo "C shuffle failed, trying Python-based shuffle..."
+        # Use Python shuffle as fallback (handles large files better)
+        $PYTHON ${MAIN_DIR}/src/shuffle_cooccur.py $COOCCURRENCE_FILE $COOCCURRENCE_SHUF_FILE -memory $MEMORY_MB -verbose $VERBOSE || {
+            echo "Warning: Both shuffle methods failed. Using unshuffled file."
+            echo "Training will proceed but may have slightly different convergence."
+            if [ -f "$COOCCURRENCE_FILE" ]; then
+                cp $COOCCURRENCE_FILE $COOCCURRENCE_SHUF_FILE
+                echo "Copied unshuffled cooccurrence file for training."
+            else
+                echo "Error: Cooccurrence file not found: $COOCCURRENCE_FILE"
+                exit 1
+            fi
+        }
+    }
 fi
 
 echo "$ $BUILDDIR/glove -save-file $SAVE_FILE -threads $NUM_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE"

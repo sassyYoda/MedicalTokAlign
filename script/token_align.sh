@@ -23,6 +23,8 @@ export TGT_ID_2_SRC_ID_RES_PATH="${MAIN_DIR}/data/pythia2biogpt/align_matrix.jso
 
 # Stage-1: train glove vectors
 cd ${GLOVE_DIR}
+# Export MAIN_DIR so train_glove.sh can use it for Python shuffle script
+export MAIN_DIR
 GLOVE_VECTOR_NAME1=$(basename ${GLOVE_VECTOR_PATH1})
 GLOVE_VECTOR_NAME1="${GLOVE_VECTOR_NAME1%.*}"
 printf "\n### Train GloVe vector ${GLOVE_VECTOR_NAME1} with ${GLOVE_TRAIN_PATH1}  ###\n\n"
