@@ -29,7 +29,8 @@ MEMORY_MB=$((AVAILABLE_RAM_MB / 2))
 MEMORY="${MEMORY_MB}.0"
 VOCAB_MIN_COUNT=5
 VECTOR_SIZE=300
-MAX_ITER=15
+# Allow MAX_ITER to be overridden via environment variable for testing
+MAX_ITER=${MAX_ITER:-15}
 WINDOW_SIZE=15
 BINARY=2
 # Auto-detect CPU threads (use all cores, but cap for stability)
@@ -116,17 +117,41 @@ fi
 
 echo "$ $BUILDDIR/glove -save-file $SAVE_FILE -threads $NUM_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE"
 
-# Try training with full threads first
-$BUILDDIR/glove -save-file $SAVE_FILE -threads $NUM_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE || {
-    echo "Warning: GloVe training failed with $NUM_THREADS threads, trying with fewer threads..."
-    # Reduce threads to avoid memory/contention issues
-    REDUCED_THREADS=$((NUM_THREADS / 2))
-    [ $REDUCED_THREADS -lt 1 ] && REDUCED_THREADS=1
-    echo "Retrying with $REDUCED_THREADS threads..."
-    $BUILDDIR/glove -save-file $SAVE_FILE -threads $REDUCED_THREADS -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE || {
-        echo "Error: GloVe training failed even with reduced threads."
-        echo "This may be due to memory limitations or a bug in GloVe with very large datasets."
-        echo "Check available memory: free -h"
-        exit 1
-    }
-}
+# Try training with progressively fewer threads to avoid segfaults
+# GloVe has known issues with very large datasets and high thread counts
+TRAIN_SUCCESS=0
+for THREAD_COUNT in $NUM_THREADS $((NUM_THREADS / 2)) $((NUM_THREADS / 4)) 4 2 1; do
+    [ $THREAD_COUNT -lt 1 ] && THREAD_COUNT=1
+    echo "Attempting training with $THREAD_COUNT thread(s)..."
+    if $BUILDDIR/glove -save-file $SAVE_FILE -threads $THREAD_COUNT -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE; then
+        TRAIN_SUCCESS=1
+        break
+    else
+        EXIT_CODE=$?
+        if [ $EXIT_CODE -eq 139 ]; then
+            echo "Segfault with $THREAD_COUNT thread(s). Trying fewer threads..."
+            continue
+        else
+            echo "Training failed with exit code $EXIT_CODE"
+            break
+        fi
+    fi
+done
+
+if [ $TRAIN_SUCCESS -eq 0 ]; then
+    echo ""
+    echo "Error: GloVe training failed with all thread counts."
+    echo "This is a known issue with GloVe on very large datasets (400M+ lines)."
+    echo ""
+    echo "Possible solutions:"
+    echo "  1. Use a machine with more RAM"
+    echo "  2. Reduce dataset size (use a subset of the cooccurrence file)"
+    echo "  3. Try reducing iterations: MAX_ITER=5 bash script/train_glove.sh ..."
+    echo "  4. This is a known GloVe bug with very large datasets (400M+ lines)"
+    echo ""
+    echo "Note: The dataset has 422M+ lines which exceeds GloVe's tested limits."
+    echo "You may need to use a subset of the data or patch GloVe's source code."
+    echo ""
+    echo "Check available memory: free -h"
+    exit 1
+fi
