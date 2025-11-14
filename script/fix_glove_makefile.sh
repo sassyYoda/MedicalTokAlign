@@ -39,11 +39,13 @@ changes_made = []
 
 # Replace -O3 with -O2 (safer optimization)
 # Also handle -Ofast which is even more aggressive
+# Need to be careful with variable expansion like $(CPU_ARCHITECTURE_FLAGS)
 if re.search(r'-O3', content):
-    content = re.sub(r'-O3', '-O2', content)
+    # Replace -O3 anywhere in CFLAGS line
+    content = re.sub(r'(\s|^)-O3(\s|$)', r'\1-O2\2', content)
     changes_made.append("Changed -O3 to -O2")
 if re.search(r'-Ofast', content):
-    content = re.sub(r'-Ofast', '-O2', content)
+    content = re.sub(r'(\s|^)-Ofast(\s|$)', r'\1-O2\2', content)
     changes_made.append("Changed -Ofast to -O2")
 
 # Remove -funroll-loops (can cause issues with large loops)
@@ -79,6 +81,21 @@ else:
 PYTHON_FIX
 
 if [ $? -eq 0 ]; then
+    echo ""
+    echo "Verifying Makefile changes..."
+    if grep -q "-O2" "$MAKEFILE" && ! grep -qE "\-O3|\-Ofast" "$MAKEFILE"; then
+        echo "✓ Makefile verified: using -O2 (not -O3)"
+    else
+        echo "⚠ Warning: Makefile may still have -O3. Checking..."
+        grep "CFLAGS" "$MAKEFILE" | head -1
+    fi
+    
+    if ! grep -q "-funroll-loops" "$MAKEFILE"; then
+        echo "✓ Makefile verified: -funroll-loops removed"
+    else
+        echo "⚠ Warning: Makefile may still have -funroll-loops"
+    fi
+    
     echo ""
     echo "Recompiling GloVe with safer flags..."
     cd "$GLOVE_DIR"

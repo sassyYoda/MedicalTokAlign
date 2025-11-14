@@ -33,15 +33,73 @@ fi
 CURRENT_DIR=$(pwd)
 if [ -f "${MAIN_DIR}/script/fix_glove_makefile.sh" ]; then
     echo "Checking and fixing GloVe Makefile compilation flags..."
-    bash ${MAIN_DIR}/script/fix_glove_makefile.sh "$CURRENT_DIR" 2>/dev/null || true
+    bash ${MAIN_DIR}/script/fix_glove_makefile.sh "$CURRENT_DIR" || {
+        echo "Warning: Makefile fix script failed or had issues"
+        echo "You may need to manually edit the Makefile to change -O3 to -O2 and remove -funroll-loops"
+    }
 elif [ -f "./script/fix_glove_makefile.sh" ]; then
     # Fallback if MAIN_DIR not set
     echo "Checking and fixing GloVe Makefile compilation flags..."
-    bash ./script/fix_glove_makefile.sh "$CURRENT_DIR" 2>/dev/null || true
+    bash ./script/fix_glove_makefile.sh "$CURRENT_DIR" || {
+        echo "Warning: Makefile fix script failed or had issues"
+    }
+fi
+
+# Patch shuffle.c to fix integer overflow bug
+if [ -f "${MAIN_DIR}/script/patch_glove_shuffle.c.sh" ]; then
+    echo "Patching shuffle.c to fix integer overflow bug..."
+    bash ${MAIN_DIR}/script/patch_glove_shuffle.c.sh "$CURRENT_DIR" 2>/dev/null || {
+        echo "Note: shuffle.c patch may have already been applied or failed"
+    }
+elif [ -f "./script/patch_glove_shuffle.c.sh" ]; then
+    echo "Patching shuffle.c to fix integer overflow bug..."
+    bash ./script/patch_glove_shuffle.c.sh "$CURRENT_DIR" 2>/dev/null || true
+fi
+
+# Verify and fix Makefile - do this manually to ensure it works
+if [ -f "Makefile" ]; then
+    # Check if Makefile needs fixing
+    NEEDS_FIX=0
+    if grep -qE "CFLAGS.*-O3" Makefile || grep -qE "CFLAGS.*-Ofast" Makefile; then
+        NEEDS_FIX=1
+    fi
+    if grep -qE "CFLAGS.*-funroll-loops" Makefile; then
+        NEEDS_FIX=1
+    fi
+    
+    if [ "$NEEDS_FIX" = "1" ]; then
+        echo "Fixing Makefile compilation flags..."
+        
+        # If GLOVE_USE_O0 is set, use -O0 (no optimization) for maximum stability
+        if [ "${GLOVE_USE_O0:-0}" = "1" ]; then
+            echo "Using -O0 (no optimization) for maximum stability..."
+            sed -i 's/-O[0-9]/ -O0 /g' Makefile
+            sed -i 's/-Ofast/ -O0 /g' Makefile
+        else
+            # Otherwise use -O2 (safer than -O3)
+            echo "Changing -O3/-Ofast to -O2..."
+            sed -i 's/-O3/ -O2 /g' Makefile
+            sed -i 's/-Ofast/ -O2 /g' Makefile
+        fi
+        
+        # Remove -funroll-loops (causes issues with large loops)
+        echo "Removing -funroll-loops..."
+        sed -i 's/-funroll-loops//g' Makefile
+        
+        # Clean up any double spaces
+        sed -i 's/  */ /g' Makefile
+        
+        echo "✓ Makefile fixed"
+        echo "Verifying:"
+        grep "^CFLAGS" Makefile | head -1
+    else
+        echo "✓ Makefile already uses safe compilation flags"
+    fi
 fi
 
 make clean 2>/dev/null || true
-make
+echo "Compiling GloVe..."
+make 2>&1 | tail -5
 
 CORPUS=$1
 SAVE_FILE=$2
@@ -154,7 +212,8 @@ TRAIN_SUCCESS=0
 for THREAD_COUNT in $NUM_THREADS $((NUM_THREADS / 2)) $((NUM_THREADS / 4)) 4 2 1; do
     [ $THREAD_COUNT -lt 1 ] && THREAD_COUNT=1
     echo "Attempting training with $THREAD_COUNT thread(s)..."
-    if $BUILDDIR/glove -save-file $SAVE_FILE -threads $THREAD_COUNT -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE; then
+    # Run with timeout to catch segfaults, and try to get more info
+    if timeout 300 $BUILDDIR/glove -save-file $SAVE_FILE -threads $THREAD_COUNT -input-file $COOCCURRENCE_SHUF_FILE -x-max $X_MAX -iter $MAX_ITER -vector-size $VECTOR_SIZE -binary $BINARY -vocab-file $VOCAB_FILE -verbose $VERBOSE 2>&1; then
         TRAIN_SUCCESS=1
         break
     else
@@ -172,17 +231,29 @@ done
 if [ $TRAIN_SUCCESS -eq 0 ]; then
     echo ""
     echo "Error: GloVe training failed with all thread counts."
-    echo "This is a known issue with GloVe on very large datasets (400M+ lines)."
     echo ""
-    echo "Possible solutions:"
-    echo "  1. Use a machine with more RAM"
-    echo "  2. Reduce dataset size (use a subset of the cooccurrence file)"
-    echo "  3. Try reducing iterations: MAX_ITER=5 bash script/train_glove.sh ..."
-    echo "  4. This is a known GloVe bug with very large datasets (400M+ lines)"
+    echo "Since this worked on RunPod, the issue is likely environment-specific."
     echo ""
-    echo "Note: The dataset has 422M+ lines which exceeds GloVe's tested limits."
-    echo "You may need to use a subset of the data or patch GloVe's source code."
+    echo "Try these solutions in order:"
     echo ""
-    echo "Check available memory: free -h"
+    echo "1. Recompile with no optimization (most likely to work):"
+    echo "   cd /path/to/GloVe"
+    echo "   Edit Makefile: change -O2/-O3 to -O0"
+    echo "   make clean && make"
+    echo "   Then run token_align.sh again"
+    echo ""
+    echo "2. Or set environment variable to force -O0:"
+    echo "   GLOVE_USE_O0=1 bash script/token_align.sh"
+    echo ""
+    echo "3. Check if GloVe version differs from RunPod:"
+    echo "   cd /path/to/GloVe && git log --oneline -5"
+    echo ""
+    echo "4. Get a backtrace with gdb to see exact crash location:"
+    echo "   cd /path/to/GloVe"
+    echo "   gdb --batch --ex run --ex bt --args build/glove -save-file test -threads 1 -input-file cooccurrence.shuf.src.bin -x-max 10 -iter 1 -vector-size 300 -binary 2 -vocab-file vocab.src.txt -verbose 2"
+    echo ""
+    echo "5. Check system differences (libraries, compiler version):"
+    echo "   bash script/check_glove_environment.sh"
+    echo ""
     exit 1
 fi
