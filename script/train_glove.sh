@@ -11,10 +11,21 @@ set -e
 echo "Cleaning and rebuilding GloVe for current CPU architecture..."
 
 # Check environment and increase stack size if needed (GloVe needs large stack for big datasets)
+# This is CRITICAL - small stack size causes segfaults with large datasets
 STACK_SIZE=$(ulimit -s 2>/dev/null || echo "unknown")
-if [ "$STACK_SIZE" != "unlimited" ] && [ "$STACK_SIZE" != "unknown" ] && [ "$STACK_SIZE" -lt 32768 ]; then
-    echo "Increasing stack size limit (current: ${STACK_SIZE}KB) for large dataset..."
-    ulimit -s unlimited 2>/dev/null || ulimit -s 65536 2>/dev/null || true
+if [ "$STACK_SIZE" != "unlimited" ] && [ "$STACK_SIZE" != "unknown" ]; then
+    if [ "$STACK_SIZE" -lt 32768 ]; then
+        echo "⚠ Stack size is only ${STACK_SIZE}KB - too small for large datasets!"
+        echo "Increasing stack size limit to unlimited..."
+        ulimit -s unlimited 2>/dev/null || ulimit -s 65536 2>/dev/null || {
+            echo "Warning: Could not increase stack size. This may cause segfaults."
+            echo "Try running: ulimit -s unlimited"
+        }
+    else
+        echo "Stack size: ${STACK_SIZE}KB (OK)"
+    fi
+else
+    echo "Stack size: unlimited (OK)"
 fi
 
 # Fix Makefile compilation flags if needed (prevents segfaults with large datasets)

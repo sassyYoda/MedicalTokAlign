@@ -38,22 +38,33 @@ with open(makefile_path, 'r') as f:
 changes_made = []
 
 # Replace -O3 with -O2 (safer optimization)
+# Also handle -Ofast which is even more aggressive
 if re.search(r'-O3', content):
     content = re.sub(r'-O3', '-O2', content)
     changes_made.append("Changed -O3 to -O2")
+if re.search(r'-Ofast', content):
+    content = re.sub(r'-Ofast', '-O2', content)
+    changes_made.append("Changed -Ofast to -O2")
 
-# Remove -funroll-loops (can cause issues)
+# Remove -funroll-loops (can cause issues with large loops)
 if re.search(r'-funroll-loops', content):
+    # Handle various patterns: -funroll-loops, $(VAR)-funroll-loops, etc.
     content = re.sub(r'\s+-funroll-loops\s+', ' ', content)
     content = re.sub(r'-funroll-loops\s+', '', content)
+    content = re.sub(r'\s+-funroll-loops', '', content)
     changes_made.append("Removed -funroll-loops")
 
 # Ensure we're using safe flags
 # Add -fno-strict-aliasing if not present (helps with memory safety)
 if not re.search(r'-fno-strict-aliasing', content):
-    # Find CFLAGS line and add the flag
-    content = re.sub(r'(CFLAGS\s*[+=].*)(-O\d)', r'\1-fno-strict-aliasing \2', content)
-    changes_made.append("Added -fno-strict-aliasing for memory safety")
+    # Find CFLAGS line and add the flag after -pthread or at the start
+    if re.search(r'CFLAGS\s*=', content):
+        # Add after -pthread if present, otherwise at start
+        content = re.sub(r'(CFLAGS\s*=\s*-pthread\s+)', r'\1-fno-strict-aliasing ', content)
+        if not re.search(r'-fno-strict-aliasing', content):
+            # If -pthread not found, add at start
+            content = re.sub(r'(CFLAGS\s*=\s*)', r'\1-fno-strict-aliasing ', content)
+        changes_made.append("Added -fno-strict-aliasing for memory safety")
 
 if changes_made:
     with open(makefile_path, 'w') as f:
