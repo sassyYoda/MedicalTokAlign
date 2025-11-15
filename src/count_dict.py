@@ -1,5 +1,4 @@
 import json
-import os
 from transformers import AutoTokenizer
 import numpy as np
 import argparse
@@ -12,16 +11,7 @@ def read_vocab_from_file(tok_config_path):
 
 def read_vocab(tok_path):
     tok = AutoTokenizer.from_pretrained(tok_path)
-    # Handle different tokenizer types:
-    # - Some tokenizers have .vocab attribute (e.g., GPT2Tokenizer)
-    # - Others use .get_vocab() method (e.g., BioGptTokenizer)
-    if hasattr(tok, 'vocab') and isinstance(tok.vocab, dict):
-        return tok.vocab
-    elif hasattr(tok, 'get_vocab'):
-        return tok.get_vocab()
-    else:
-        # Last resort: try to construct from tokenizer's internal state
-        raise ValueError(f"Could not extract vocabulary from tokenizer at {tok_path}. Tokenizer type: {type(tok)}")
+    return tok.vocab
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -58,11 +48,6 @@ if __name__ == '__main__':
 
     # print(vocab_overlap)
     print(f"{num_overlap}/{num_vocab} ({num_overlap*100/num_vocab:.2f}%)")
-
-    # Create output directory if it doesn't exist
-    output_dir = os.path.dirname(save_path)
-    if output_dir:  # Only create if there's a directory component
-        os.makedirs(output_dir, exist_ok=True)
 
     with open(save_path, 'w', encoding='utf-8') as file:
         json.dump(vocab_overlap, file, indent="\t", ensure_ascii=False)

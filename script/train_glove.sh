@@ -24,6 +24,12 @@ BINARY=2
 NUM_THREADS=64
 X_MAX=10
 
+if hash python 2>/dev/null; then
+    PYTHON=python
+else
+    PYTHON=python3
+fi
+
 echo
 echo "$ $BUILDDIR/vocab_count -min-count $VOCAB_MIN_COUNT -verbose $VERBOSE < $CORPUS > $VOCAB_FILE"
 $BUILDDIR/vocab_count -min-count $VOCAB_MIN_COUNT -verbose $VERBOSE < $CORPUS > $VOCAB_FILE

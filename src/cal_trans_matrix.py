@@ -1,6 +1,5 @@
 import numpy as np
 import json
-import os
 from tqdm import tqdm
 import random
 import argparse
@@ -167,11 +166,6 @@ if __name__ == '__main__':
         td[tid] = int(lid)
 
     print(f"{supl_id} ids are suppled with gold transition dictionary.")
-
-    # Create output directory if it doesn't exist
-    output_dir = os.path.dirname(tgt_path)
-    if output_dir:  # Only create if there's a directory component
-        os.makedirs(output_dir, exist_ok=True)
 
     with open(tgt_path, "w") as f:
         json.dump(td, f, indent="\t")
