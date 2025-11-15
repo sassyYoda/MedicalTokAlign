@@ -15,7 +15,10 @@ COOCCURRENCE_FILE=cooccurrence.src.bin
 COOCCURRENCE_SHUF_FILE=cooccurrence.shuf.src.bin
 BUILDDIR=build
 VERBOSE=2
-MEMORY=1536.0
+# Reduce MEMORY to avoid integer overflow in GloVe's shuffle.c array_size calculation
+# The calculation: array_size = (long long)(0.95 * memory_limit * 1073741824 / sizeof(CREC))
+# Can overflow with large memory values, causing segfault. Using 512.0 MB is safer.
+MEMORY=512.0
 VOCAB_MIN_COUNT=5
 VECTOR_SIZE=300
 MAX_ITER=15

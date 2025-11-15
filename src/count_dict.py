@@ -11,7 +11,16 @@ def read_vocab_from_file(tok_config_path):
 
 def read_vocab(tok_path):
     tok = AutoTokenizer.from_pretrained(tok_path)
-    return tok.vocab
+    # Handle different tokenizer types:
+    # - Some tokenizers have .vocab attribute (e.g., GPT2Tokenizer, GPTNeoXTokenizer)
+    # - Others use .get_vocab() method (e.g., BioGptTokenizer)
+    if hasattr(tok, 'vocab') and isinstance(tok.vocab, dict):
+        return tok.vocab
+    elif hasattr(tok, 'get_vocab'):
+        return tok.get_vocab()
+    else:
+        # Last resort: try to construct from tokenizer's internal state
+        raise ValueError(f"Could not extract vocabulary from tokenizer at {tok_path}. Tokenizer type: {type(tok)}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
